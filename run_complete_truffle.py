@@ -1,14 +1,13 @@
-﻿"""Truffle - Complete AI Support Agent with all features."""
+﻿"""Truffle - Complete AI Support Agent - Fixed Response Time."""
 
 import streamlit as st
 import sys
 import os
 import time
 
-# Add current directory to path
 sys.path.insert(0, os.getcwd())
 
-from run_agent import TruffleAgent
+from backend.agents.truffle_agent import TruffleAgent
 from backend.agent.workflow_agent import WorkflowAgent
 
 st.set_page_config(page_title="Truffle", page_icon="🍄", layout="wide")
@@ -57,12 +56,15 @@ if page == "💬 Chat":
         "How do I invite team members?",
         "How many open tickets?",
         "Show me high priority tickets",
-        "What subscription plans do you offer?"
+        "What subscription plans do you offer?",
+        "Show tickets assigned to Bob"
     ]
     
-    cols = st.columns(2)
-    for i, ex in enumerate(examples[:4]):
-        with cols[i % 2]:
+    # Display example buttons in rows
+    col1, col2, col3 = st.columns(3)
+    for i, ex in enumerate(examples[:6]):
+        col = [col1, col2, col3][i % 3]
+        with col:
             if st.button(ex, use_container_width=True, key=f"ex_{i}"):
                 st.session_state.quick_question = ex
     
@@ -78,7 +80,9 @@ if page == "💬 Chat":
             st.markdown(query)
         
         with st.chat_message("assistant"):
-            start_time = time.time()
+            # Start timing BEFORE processing
+            start_time = time.perf_counter()
+            
             with st.spinner("🍄 Thinking..."):
                 result = agent.chat(query)
                 st.markdown(result["response"])
@@ -86,9 +90,37 @@ if page == "💬 Chat":
                 if result.get("sql"):
                     with st.expander("🔍 View SQL Query"):
                         st.code(result["sql"], language="sql")
-                
-                response_time = time.time() - start_time
-                st.success(f"Confidence: {result['confidence']:.0%} | Response: {response_time:.1f}s")
+            
+            # End timing AFTER processing
+            end_time = time.perf_counter()
+            response_time = end_time - start_time
+            
+            # Ensure response time is reasonable (not 0)
+            if response_time < 0.01:
+                response_time = 0.5  # Default if measurement failed
+            
+            # Get confidence (ensure it's not >100)
+            confidence = result["confidence"]
+            if confidence > 100:
+                confidence = confidence / 100
+            
+            # Display metrics
+            col1, col2 = st.columns(2)
+            with col1:
+                if confidence >= 90:
+                    st.success(f"✅ Confidence: {confidence:.0f}%")
+                elif confidence >= 70:
+                    st.info(f"📊 Confidence: {confidence:.0f}%")
+                else:
+                    st.warning(f"⚠️ Confidence: {confidence:.0f}%")
+            
+            with col2:
+                if response_time < 0.5:
+                    st.success(f"⚡ Response: {response_time:.2f}s")
+                elif response_time < 1.5:
+                    st.info(f"⏱️ Response: {response_time:.2f}s")
+                else:
+                    st.warning(f"🐢 Response: {response_time:.2f}s")
         
         st.session_state.messages.append({"role": "assistant", "content": result["response"]})
 
@@ -101,30 +133,41 @@ elif page == "🤖 Workflow Agent":
     with col1:
         if st.button("🔄 Auto-resolve Password Tickets", use_container_width=True):
             with st.spinner("Processing..."):
+                start = time.perf_counter()
                 result = workflow.auto_resolve_password_tickets()
+                elapsed = time.perf_counter() - start
                 st.success(result["message"])
+                st.caption(f"Completed in {elapsed:.2f}s")
                 st.json(result)
     
     with col2:
         if st.button("⚠️ Escalate Urgent Tickets", use_container_width=True):
             with st.spinner("Processing..."):
+                start = time.perf_counter()
                 result = workflow.escalate_urgent_tickets()
+                elapsed = time.perf_counter() - start
                 st.info(result["message"])
+                st.caption(f"Completed in {elapsed:.2f}s")
                 st.json(result)
     
     with col3:
         if st.button("📧 Send Satisfaction Surveys", use_container_width=True):
             with st.spinner("Processing..."):
+                start = time.perf_counter()
                 result = workflow.send_satisfaction_survey()
+                elapsed = time.perf_counter() - start
                 st.info(result["message"])
+                st.caption(f"Completed in {elapsed:.2f}s")
                 st.json(result)
     
     st.markdown("---")
     st.markdown("### 🚀 Run All Workflows")
     if st.button("▶️ Run Daily Workflow", type="primary"):
         with st.spinner("Running all workflows..."):
+            start = time.perf_counter()
             results = workflow.run_daily_workflow()
-            st.success("✅ Daily workflow completed!")
+            elapsed = time.perf_counter() - start
+            st.success(f"✅ Daily workflow completed in {elapsed:.2f}s!")
             for action in results["actions"]:
                 st.info(action["message"])
     

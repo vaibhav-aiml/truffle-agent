@@ -1,24 +1,17 @@
-﻿"""Truffle Agent with RAG + Text-to-SQL - Works from any directory."""
+﻿"""Truffle Agent - Fixed confidence scores."""
 
 import sys
 import os
 
-# Get the absolute path to the project root
-_current_file = os.path.abspath(__file__)
-_project_root = os.path.dirname(os.path.dirname(_current_file))
+sys.path.insert(0, os.getcwd())
 
-# Add to path if not already there
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
-
-# Now import works
 from backend.text_to_sql.converter import TextToSQL
 
 class TruffleAgent:
-    """Truffle with RAG and Text-to-SQL capabilities."""
+    """Truffle with fixed confidence scoring."""
     
     def __init__(self):
-        print("🍄 Initializing Truffle with Text-to-SQL...")
+        print("🍄 Initializing Truffle...")
         self.t2sql = TextToSQL()
         self._init_responses()
         print("✅ Truffle Agent ready!")
@@ -38,45 +31,53 @@ class TruffleAgent:
 3. Select **Team** or **Team Members**
 4. Click the **Invite Member** button
 5. Enter the person's email address
-6. Choose their role
+6. Choose their role:
+   - **Admin** - Full access, can invite/remove members
+   - **Member** - Can work on tickets, cannot manage team
+   - **Viewer** - Read-only access
 7. Click **Send Invitation**
 
-**Team Limits:**
+**Team Limits by Plan:**
 - Basic: 5 members
 - Premium: 20 members
 - Enterprise: Unlimited
-"""
+""",
+                "confidence": 95
             },
             "cancel": {
                 "keywords": ["cancel", "unsubscribe", "stop billing", "end subscription"],
                 "answer": """
 ### How to Cancel Your Subscription
 
-**Steps:**
+**Steps to Cancel:**
 1. Go to **Settings** → **Billing**
 2. Click **Cancel Subscription**
 3. Confirm cancellation
 
-**After cancellation:**
+**What happens after:**
 - Service continues until billing period ends
 - No further charges
 - Data kept for 30 days
-"""
+- Can reactivate anytime
+""",
+                "confidence": 95
             },
             "mobile": {
                 "keywords": ["mobile", "app", "phone", "ios", "android"],
                 "answer": """
 ### Mobile App
 
-**Download:**
-- iOS: Apple App Store
-- Android: Google Play Store
+**Download:** iOS App Store or Google Play Store
 
 **Features:**
 - Push notifications
 - Reply to tickets
+- Upload photos
 - Offline mode
-"""
+
+Free for all subscribers!
+""",
+                "confidence": 95
             },
             "password": {
                 "keywords": ["password", "reset", "forgot"],
@@ -89,28 +90,50 @@ class TruffleAgent:
 3. Enter your email
 4. Check email for reset link
 5. Create new password
-"""
+
+**Requirements:** 8+ characters, one uppercase, one number
+""",
+                "confidence": 95
             },
             "subscription": {
                 "keywords": ["subscription", "plan", "pricing", "basic", "premium", "enterprise"],
                 "answer": """
 ### Subscription Plans
 
-**Basic** - $9.99/month: 5 members, 100GB storage
-**Premium** - $29.99/month: 20 members, 500GB storage, priority support
+**Basic** - $9.99/month: 5 members, 100GB storage, email support
+
+**Premium** - $29.99/month: 20 members, 500GB storage, priority support, analytics
+
 **Enterprise** - $99.99/month: Unlimited members, 2TB storage, 24/7 support
 
 💡 Save 20% with annual billing!
-"""
+""",
+                "confidence": 95
             },
             "refund": {
                 "keywords": ["refund", "money back", "guarantee"],
                 "answer": """
 ### Refund Policy
 
-30-Day money-back guarantee. Request refund in Settings → Billing.
-Processed in 5-7 business days.
-"""
+**30-Day Money-Back Guarantee**
+
+Request refund in Settings → Billing
+Processed in 5-7 business days
+""",
+                "confidence": 95
+            },
+            "payment": {
+                "keywords": ["payment", "credit card", "paypal", "method"],
+                "answer": """
+### Payment Methods Accepted
+
+- Visa, Mastercard, American Express, Discover
+- PayPal, Apple Pay, Google Pay
+- Bank transfer (Enterprise plans only)
+
+All payments processed securely via Stripe.
+""",
+                "confidence": 95
             }
         }
     
@@ -123,13 +146,15 @@ Processed in 5-7 business days.
                 if keyword in query_lower:
                     return {
                         "response": data["answer"],
-                        "confidence": 95,
+                        "confidence": data["confidence"],  # FIXED: 95, not 9500
+                        "type": "rag",
                         "sources": ["Knowledge Base"]
                     }
         
         return {
-            "response": "I couldn't find that. Try asking about invites, cancellation, mobile app, password reset, subscription plans, or refunds.",
+            "response": "I couldn't find that. Try asking about: invites, cancellation, mobile app, password reset, subscription plans, or refunds.",
             "confidence": 50,
+            "type": "rag",
             "sources": ["Default"]
         }
     
@@ -140,20 +165,22 @@ Processed in 5-7 business days.
         # Check if it's a database/ticket question
         db_keywords = ["ticket", "tickets", "open", "resolved", "priority", 
                        "assigned to", "satisfaction", "count tickets", "how many",
-                       "show me", "list tickets"]
+                       "show me", "list tickets", "tickets by", "group by"]
         
         is_db_query = any(keyword in query_lower for keyword in db_keywords)
         
-        if is_db_query and hasattr(self, 't2sql'):
+        if is_db_query:
             try:
                 result = self.t2sql.answer(query)
+                # FIXED: Return correct confidence
                 return {
                     "query": query,
                     "response": result["answer"],
-                    "confidence": 95,
+                    "confidence": 94,  # Fixed at 94% for SQL
                     "type": "sql",
                     "sql": result.get("sql"),
-                    "sources": ["Database"]
+                    "sources": ["Database"],
+                    "documents_used": 0
                 }
             except Exception as e:
                 return {
@@ -168,8 +195,8 @@ Processed in 5-7 business days.
             return {
                 "query": query,
                 "response": rag_result["response"],
-                "confidence": rag_result["confidence"],
-                "type": "rag",
+                "confidence": rag_result["confidence"],  # FIXED: 95 not 9500
+                "type": rag_result["type"],
                 "sources": rag_result["sources"]
             }
 
@@ -179,11 +206,12 @@ if __name__ == "__main__":
     test_queries = [
         "How do I invite team members?",
         "How many open tickets?",
+        "What subscription plans do you offer?"
     ]
     
     for query in test_queries:
         print(f"\n{'='*50}")
         print(f"Q: {query}")
         result = agent.chat(query)
-        print(f"A: {result['response'][:200]}...")
-        print(f"Type: {result.get('type', 'unknown')}")
+        print(f"A: {result['response'][:100]}...")
+        print(f"Confidence: {result['confidence']}%")

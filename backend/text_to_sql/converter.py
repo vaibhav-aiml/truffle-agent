@@ -1,4 +1,4 @@
-﻿"""Text-to-SQL converter for Truffle."""
+﻿"""Text-to-SQL converter with case-insensitive search."""
 
 import sqlite3
 import re
@@ -8,47 +8,48 @@ class TextToSQL:
     """Convert natural language to SQL queries."""
     
     def __init__(self, db_path="data/processed/sql_db/tickets.db"):
-        self.db_path = db_path
-        self.schema = self._get_schema()
-    
-    def _get_schema(self):
-        """Get database schema."""
-        return """
-        tickets table schema:
-        - id (INTEGER): Ticket ID
-        - customer_name (TEXT): Customer full name
-        - customer_email (TEXT): Customer email address
-        - subject (TEXT): Ticket subject line
-        - description (TEXT): Ticket description
-        - status (TEXT): Values: open, in_progress, resolved, closed
-        - priority (TEXT): Values: low, medium, high, urgent
-        - assigned_to (TEXT): Agent name
-        - created_at (DATE): When ticket was created
-        - resolved_at (DATE): When ticket was resolved (NULL if not resolved)
-        - satisfaction_score (INTEGER): 1-5, NULL if not resolved
-        """
+        base_dir = Path(__file__).parent.parent.parent
+        self.db_path = base_dir / db_path
     
     def convert(self, question: str) -> dict:
         """Convert natural language to SQL query."""
+        q = question.lower()
+        
+        # Handle assigned_to queries (case-insensitive)
+        if "assigned to" in q or "assigned to alice" in q or "assigned to bob" in q:
+            return self._handle_assigned_to(question)
+        
+        # Handle COUNT queries
+        if "how many" in q or "count" in q:
+            return self._handle_count(q)
+        
+        # Handle SHOW/LIST queries
+        if "show" in q or "list" in q:
+            return self._handle_list(q)
+        
+        # Handle group by queries
+        if "by status" in q or "by priority" in q or "by agent" in q:
+            return self._handle_group_by(q)
+        
+        # Handle satisfaction queries
+        if "satisfaction" in q or "average" in q:
+            return self._handle_satisfaction(q)
+        
+        return {"sql": None, "error": "Could not understand the question"}
+    
+    def _handle_assigned_to(self, question):
+        """Handle assigned_to queries with case-insensitive matching."""
         question_lower = question.lower()
         
-        # COUNT queries
-        if "how many" in question_lower or "count" in question_lower:
-            return self._handle_count(question_lower)
+        # Extract agent name
+        agents = ["alice", "bob", "charlie", "diana", "eve"]
+        for agent in agents:
+            if agent in question_lower:
+                # Use UPPER() for case-insensitive comparison
+                sql = f"SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('{agent}') LIMIT 20"
+                return {"sql": sql, "error": None}
         
-        # SHOW/LIST queries
-        if any(word in question_lower for word in ["show", "list", "get", "find"]):
-            return self._handle_list(question_lower)
-        
-        # AVERAGE queries
-        if "average" in question_lower:
-            return self._handle_average(question_lower)
-        
-        # Default
-        return {
-            "sql": None,
-            "error": "Could not understand the question. Try: 'How many open tickets?', 'Show high priority tickets'"
-        }
+        return {"sql": None, "error": "Agent not found"}
     
     def _handle_count(self, question):
         """Handle COUNT queries."""
@@ -60,91 +61,83 @@ class TextToSQL:
             sql += " WHERE status = 'resolved'"
         elif "closed" in question:
             sql += " WHERE status = 'closed'"
-        elif "high priority" in question or "urgent" in question:
+        elif "urgent" in question or "high priority" in question:
             sql += " WHERE priority IN ('high', 'urgent')"
         
         return {"sql": sql, "error": None}
     
     def _handle_list(self, question):
         """Handle LIST/SHOW queries."""
-        sql = "SELECT * FROM tickets"
-        conditions = []
+        sql = "SELECT * FROM tickets WHERE 1=1"
         
         if "open" in question:
-            conditions.append("status = 'open'")
-        elif "resolved" in question:
-            conditions.append("status = 'resolved'")
-        
-        if "high priority" in question or "urgent" in question:
-            conditions.append("priority IN ('high', 'urgent')")
-        
-        if "assigned to" in question:
-            import re
-            match = re.search(r'assigned to (\w+)', question)
-            if match:
-                conditions.append(f"assigned_to = '{match.group(1)}'")
-        
-        if conditions:
-            sql += " WHERE " + " AND ".join(conditions)
+            sql += " AND status = 'open'"
+        if "resolved" in question:
+            sql += " AND status = 'resolved'"
+        if "urgent" in question or "high priority" in question:
+            sql += " AND priority IN ('high', 'urgent')"
         
         sql += " LIMIT 20"
-        
         return {"sql": sql, "error": None}
     
-    def _handle_average(self, question):
-        """Handle AVERAGE queries."""
-        sql = "SELECT AVG(satisfaction_score) FROM tickets"
-        
-        if "resolved" in question:
-            sql += " WHERE satisfaction_score IS NOT NULL"
-        
-        return {"sql": sql, "error": None}
+    def _handle_group_by(self, question):
+        """Handle GROUP BY queries."""
+        if "by status" in question:
+            return {"sql": "SELECT status, COUNT(*) as count FROM tickets GROUP BY status", "error": None}
+        elif "by priority" in question:
+            return {"sql": "SELECT priority, COUNT(*) as count FROM tickets GROUP BY priority", "error": None}
+        elif "by agent" in question:
+            return {"sql": "SELECT assigned_to, COUNT(*) as count FROM tickets GROUP BY assigned_to", "error": None}
+        return {"sql": None, "error": "Group by not recognized"}
+    
+    def _handle_satisfaction(self, question):
+        """Handle satisfaction queries."""
+        if "average" in question:
+            return {"sql": "SELECT AVG(satisfaction_score) FROM tickets WHERE satisfaction_score IS NOT NULL", "error": None}
+        return {"sql": None, "error": "Satisfaction query not recognized"}
     
     def execute(self, sql: str) -> dict:
         """Execute SQL query and return results."""
         if not sql:
-            return {"error": "No SQL query provided"}
+            return {"error": "No SQL provided"}
         
         try:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute(sql)
             
-            # Get column names
-            columns = [description[0] for description in cursor.description]
-            
-            # Fetch results
+            columns = [desc[0] for desc in cursor.description] if cursor.description else []
             results = cursor.fetchall()
             conn.close()
             
-            return {
-                "columns": columns,
-                "data": results,
-                "count": len(results),
-                "error": None
-            }
+            return {"columns": columns, "data": results, "count": len(results), "error": None}
         except Exception as e:
-            return {"error": str(e), "data": None}
+            return {"error": str(e)}
     
     def answer(self, question: str) -> dict:
         """Convert question to SQL, execute, return formatted answer."""
-        # Convert to SQL
         result = self.convert(question)
         
         if result["error"]:
             return {"answer": result["error"], "sql": None, "data": None}
         
-        # Execute SQL
         exec_result = self.execute(result["sql"])
         
         if exec_result["error"]:
             return {"answer": f"Database error: {exec_result['error']}", "sql": result["sql"], "data": None}
         
-        # Format answer
+        # Format answer based on query type
         if "COUNT" in result["sql"].upper():
             count = exec_result["data"][0][0]
             return {
                 "answer": f"📊 {count} ticket(s) found.",
+                "sql": result["sql"],
+                "data": exec_result["data"]
+            }
+        elif "GROUP BY" in result["sql"].upper():
+            lines = [f"  • {row[0]}: {row[1]}" for row in exec_result["data"]]
+            return {
+                "answer": "📈 Breakdown:\n" + "\n".join(lines),
                 "sql": result["sql"],
                 "data": exec_result["data"]
             }
@@ -156,8 +149,7 @@ class TextToSQL:
                 "data": exec_result["data"]
             }
         else:
-            count = exec_result["count"]
-            if count == 0:
+            if exec_result["count"] == 0:
                 return {
                     "answer": "No tickets found matching your query.",
                     "sql": result["sql"],
@@ -166,7 +158,7 @@ class TextToSQL:
             else:
                 preview = "\n".join([f"  • Ticket #{row[0]}: {row[3][:50]}..." for row in exec_result["data"][:5]])
                 return {
-                    "answer": f"📋 Found {count} ticket(s):\n{preview}",
+                    "answer": f"📋 Found {exec_result['count']} ticket(s):\n{preview}",
                     "sql": result["sql"],
                     "data": exec_result["data"]
                 }
@@ -174,14 +166,13 @@ class TextToSQL:
 if __name__ == "__main__":
     t2sql = TextToSQL()
     
-    test_questions = [
+    test_queries = [
+        "Show tickets assigned to Bob",
         "How many open tickets?",
-        "Show me high priority tickets",
-        "How many resolved tickets?",
-        "Average satisfaction score?"
+        "tickets by status"
     ]
     
-    for q in test_questions:
+    for q in test_queries:
         print(f"\n🔍 Q: {q}")
         result = t2sql.answer(q)
         print(f"📝 A: {result['answer']}")

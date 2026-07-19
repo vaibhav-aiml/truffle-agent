@@ -101,6 +101,34 @@ def add_document_to_db(client: OpenAI | None, documents: list[dict], doc_id: str
 
 def search_vector_db(client: OpenAI | None, documents: list[dict], query: str, top_k: int = 3) -> list[dict]:
     """Retrieve top k most similar document records matching query."""
+    if not client:
+        # Local keyword-matching fallback search for offline running
+        logger.info("OpenAI client missing. Performing local keyword search ranking fallback.")
+        query_words = set(query.strip().lower().split())
+        stop_words = {"what", "is", "your", "how", "do", "i", "the", "a", "an", "to", "for", "in", "of", "and", "we", "accept"}
+        query_keywords = query_words - stop_words
+        if not query_keywords:
+            query_keywords = query_words
+            
+        results = []
+        for doc in documents:
+            doc_content_lower = doc["content"].lower()
+            score = 0.0
+            for keyword in query_keywords:
+                count = doc_content_lower.count(keyword)
+                if count > 0:
+                    score += 1.0 + (0.1 * count)
+                    
+            similarity = min(0.99, score / max(1.0, len(query_keywords)))
+            results.append({
+                "id": doc["id"],
+                "content": doc["content"],
+                "metadata": doc["metadata"],
+                "similarity": similarity
+            })
+        results.sort(key=lambda x: x["similarity"], reverse=True)
+        return results[:top_k]
+
     query_embedding = get_embedding(client, query)
     results = []
     for doc in documents:
@@ -113,3 +141,4 @@ def search_vector_db(client: OpenAI | None, documents: list[dict], query: str, t
         })
     results.sort(key=lambda x: x["similarity"], reverse=True)
     return results[:top_k]
+

@@ -27,6 +27,21 @@ def get_rag_answer(context: dict, query: str) -> dict:
     openai_client = context.get("openai_client")
     groq_client = context.get("groq_client")
     
+    # 1. High-confidence Keyword Router Pre-check
+    try:
+        from backend.rag.keyword_router import route_keyword_query
+        router_res = route_keyword_query(query)
+        if router_res["confidence"] > 0.8:
+            logger.info(f"Keyword Router hit: source={router_res['source']}")
+            return {
+                "response": router_res["response"],
+                "confidence": int(router_res["confidence"] * 100),
+                "type": "rag",
+                "sources": [router_res["source"]]
+            }
+    except Exception as e:
+        logger.error(f"Keyword router pre-check failed: {e}", exc_info=True)
+
     try:
         # Search the vector database using stateless function
         results = search_vector_db(openai_client, documents, query, top_k=2)

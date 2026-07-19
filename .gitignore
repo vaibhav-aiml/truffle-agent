@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.pyc
 venv/
@@ -12,3 +12,9 @@ data/raw/
 # IDE
 .vscode/
 .idea/
+.gemini/
+
+# Logs
+*.log
+data/*.log
+

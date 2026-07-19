@@ -1,38 +1,18 @@
-﻿"""Evaluation dashboard for Truffle accuracy metrics."""
+"""Evaluation dashboard displaying dynamic system accuracy metrics."""
 
 import streamlit as st
 import sqlite3
 from pathlib import Path
-from datetime import datetime, timedelta
+from backend.evaluation.metrics import run_suite_evaluation
+from backend.config import settings
 
-class EvaluationDashboard:
-    """Track and display Truffle's performance metrics."""
+def get_database_stats() -> dict:
+    """Get database statistics."""
+    db_path = settings.DB_PATH
+    if not db_path.exists():
+        return {"error": "Database not found"}
     
-    def __init__(self):
-        self.metrics = {
-            "rag_accuracy": 89,
-            "sql_accuracy": 94,
-            "avg_response_time": 1.2,
-            "total_queries": 0,
-            "successful_queries": 0
-        }
-    
-    def get_system_metrics(self) -> dict:
-        """Get system performance metrics."""
-        return {
-            "RAG Accuracy": f"{self.metrics['rag_accuracy']}%",
-            "Text-to-SQL Accuracy": f"{self.metrics['sql_accuracy']}%",
-            "Avg Response Time": f"{self.metrics['avg_response_time']}s",
-            "Total Queries": self.metrics['total_queries'],
-            "Success Rate": f"{(self.metrics['successful_queries'] / max(1, self.metrics['total_queries']) * 100):.0f}%"
-        }
-    
-    def get_database_stats(self) -> dict:
-        """Get database statistics."""
-        db_path = Path("data/processed/sql_db/tickets.db")
-        if not db_path.exists():
-            return {"error": "Database not found"}
-        
+    try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
@@ -43,65 +23,63 @@ class EvaluationDashboard:
         open_tickets = cursor.fetchone()[0]
         
         cursor.execute("SELECT AVG(satisfaction_score) FROM tickets WHERE satisfaction_score IS NOT NULL")
-        avg_satisfaction = cursor.fetchone()[0] or 0
+        avg_satisfaction = cursor.fetchone()[0] or 0.0
         
         conn.close()
+        
+        resolution_rate = f"{(total - open_tickets) / max(1, total) * 100:.0f}%"
         
         return {
             "Total Tickets": total,
             "Open Tickets": open_tickets,
-            "Resolution Rate": f"{(total - open_tickets) / total * 100:.0f}%",
+            "Resolution Rate": resolution_rate,
             "Avg Satisfaction": f"{avg_satisfaction:.1f}/5.0"
         }
-    
-    def record_query(self, query_type: str, success: bool, response_time: float):
-        """Record a query for tracking."""
-        self.metrics["total_queries"] += 1
-        if success:
-            self.metrics["successful_queries"] += 1
-        
-        self.metrics["avg_response_time"] = (
-            (self.metrics["avg_response_time"] * (self.metrics["total_queries"] - 1) + response_time) 
-            / self.metrics["total_queries"]
-        )
+    except Exception as e:
+        return {"error": f"Database read error: {e}"}
 
 def show_dashboard():
     """Display the evaluation dashboard."""
     st.markdown("## 📊 Truffle Evaluation Dashboard")
-    st.markdown("Real-time performance metrics")
+    st.markdown("Dynamic performance and accuracy calculations matching the test cases.")
     
-    dashboard = EvaluationDashboard()
-    
+    # 1. Trigger Suite Run
+    with st.spinner("🔄 Running dynamic test suite evaluation..."):
+        suite_results = run_suite_evaluation()
+        
+    if "error" in suite_results:
+        st.error(f"Failed to run evaluation suite: {suite_results['error']}")
+        return
+        
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("### 🤖 System Performance")
-        metrics = dashboard.get_system_metrics()
-        for key, value in metrics.items():
-            st.metric(key, value)
+        st.markdown("### 🤖 Dynamic System Performance")
+        st.metric("Test Accuracy Score", f"{suite_results['accuracy']:.1f}%")
+        st.metric("Avg Latency per Query", f"{suite_results['avg_response_time']:.3f}s")
+        st.metric("Tests Executed", f"{suite_results['total_cases']}")
+        st.metric("Tests Passed", f"{suite_results['passed_cases']}/{suite_results['total_cases']}")
     
     with col2:
-        st.markdown("### 🗄️ Database Stats")
-        db_stats = dashboard.get_database_stats()
+        st.markdown("### 🗄️ Database Statistics")
+        db_stats = get_database_stats()
         if "error" not in db_stats:
             for key, value in db_stats.items():
                 st.metric(key, value)
         else:
             st.warning(db_stats["error"])
+            
+    st.markdown("---")
+    st.markdown("### 📈 Test Cases Execution Detail Log")
     
-    st.markdown("### 📈 Accuracy Over Time")
-    st.info("📊 RAG Accuracy: 89% | Text-to-SQL: 94% | Overall: 91%")
-    
-    st.markdown("### ✅ Test Suite Results")
-    test_results = {
-        "Knowledge Base Queries": "✅ 45/50 passed (90%)",
-        "Text-to-SQL Queries": "✅ 47/50 passed (94%)",
-        "Complex Queries": "✅ 18/20 passed (90%)",
-        "Agent Workflows": "✅ 12/12 passed (100%)"
-    }
-    
-    for test, result in test_results.items():
-        st.success(f"**{test}:** {result}")
+    for case in suite_results["results"]:
+        status_icon = "✅" if case["passed"] else "❌"
+        
+        with st.expander(f"{status_icon} Case #{case['id']} - Query: \"{case['query']}\""):
+            st.markdown(f"**Expected Handler:** `{case['expected_source']}`")
+            st.markdown(f"**Actual Routed Handler:** `{case['actual_source']}`")
+            st.markdown(f"**Execution Latency:** `{case['latency']:.4f}s`")
+            st.markdown(f"**Detail:** {case['details']}")
 
 if __name__ == "__main__":
     show_dashboard()

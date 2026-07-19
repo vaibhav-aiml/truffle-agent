@@ -1,217 +1,116 @@
-﻿"""Truffle Agent - Fixed confidence scores."""
+"""Stateless functional agent routing orchestrator."""
 
-import sys
-import os
+from backend.config import settings
+from backend.services.sql_service import answer_sql_question
+from backend.services.vector_service import load_vector_db, create_openai_client, search_vector_db
+from backend.services.llm_service import create_groq_client, answer_with_context
+from backend.utils.logger import logger
 
-sys.path.insert(0, os.getcwd())
-
-from backend.text_to_sql.converter import TextToSQL
-
-class TruffleAgent:
-    """Truffle with fixed confidence scoring."""
+def create_agent_context(db_path: str = None, storage_path: str = None) -> dict:
+    """Build and load the database, vector DB, and client states for routing."""
+    db_path = db_path or str(settings.DB_PATH)
+    storage_path = storage_path or str(settings.VECTOR_DB_DIR)
     
-    def __init__(self):
-        print("🍄 Initializing Truffle...")
-        self.t2sql = TextToSQL()
-        self._init_responses()
-        print("✅ Truffle Agent ready!")
+    logger.info(f"Initializing functional agent context (DB={db_path}, Storage={storage_path})")
     
-    def _init_responses(self):
-        """Initialize knowledge base responses."""
-        self.responses = {
-            "invite": {
-                "keywords": ["invite", "team member", "add member", "add person", "new member"],
-                "answer": """
-### How to Invite Team Members
+    return {
+        "db_path": db_path,
+        "storage_path": storage_path,
+        "documents": load_vector_db(storage_path),
+        "groq_client": create_groq_client(),
+        "openai_client": create_openai_client()
+    }
 
-**Step-by-Step Instructions:**
-
-1. Log into your account dashboard
-2. Click **Settings** in the sidebar
-3. Select **Team** or **Team Members**
-4. Click the **Invite Member** button
-5. Enter the person's email address
-6. Choose their role:
-   - **Admin** - Full access, can invite/remove members
-   - **Member** - Can work on tickets, cannot manage team
-   - **Viewer** - Read-only access
-7. Click **Send Invitation**
-
-**Team Limits by Plan:**
-- Basic: 5 members
-- Premium: 20 members
-- Enterprise: Unlimited
-""",
-                "confidence": 95
-            },
-            "cancel": {
-                "keywords": ["cancel", "unsubscribe", "stop billing", "end subscription"],
-                "answer": """
-### How to Cancel Your Subscription
-
-**Steps to Cancel:**
-1. Go to **Settings** → **Billing**
-2. Click **Cancel Subscription**
-3. Confirm cancellation
-
-**What happens after:**
-- Service continues until billing period ends
-- No further charges
-- Data kept for 30 days
-- Can reactivate anytime
-""",
-                "confidence": 95
-            },
-            "mobile": {
-                "keywords": ["mobile", "app", "phone", "ios", "android"],
-                "answer": """
-### Mobile App
-
-**Download:** iOS App Store or Google Play Store
-
-**Features:**
-- Push notifications
-- Reply to tickets
-- Upload photos
-- Offline mode
-
-Free for all subscribers!
-""",
-                "confidence": 95
-            },
-            "password": {
-                "keywords": ["password", "reset", "forgot"],
-                "answer": """
-### Reset Password
-
-**Steps:**
-1. Go to login page
-2. Click **Forgot Password**
-3. Enter your email
-4. Check email for reset link
-5. Create new password
-
-**Requirements:** 8+ characters, one uppercase, one number
-""",
-                "confidence": 95
-            },
-            "subscription": {
-                "keywords": ["subscription", "plan", "pricing", "basic", "premium", "enterprise"],
-                "answer": """
-### Subscription Plans
-
-**Basic** - $9.99/month: 5 members, 100GB storage, email support
-
-**Premium** - $29.99/month: 20 members, 500GB storage, priority support, analytics
-
-**Enterprise** - $99.99/month: Unlimited members, 2TB storage, 24/7 support
-
-💡 Save 20% with annual billing!
-""",
-                "confidence": 95
-            },
-            "refund": {
-                "keywords": ["refund", "money back", "guarantee"],
-                "answer": """
-### Refund Policy
-
-**30-Day Money-Back Guarantee**
-
-Request refund in Settings → Billing
-Processed in 5-7 business days
-""",
-                "confidence": 95
-            },
-            "payment": {
-                "keywords": ["payment", "credit card", "paypal", "method"],
-                "answer": """
-### Payment Methods Accepted
-
-- Visa, Mastercard, American Express, Discover
-- PayPal, Apple Pay, Google Pay
-- Bank transfer (Enterprise plans only)
-
-All payments processed securely via Stripe.
-""",
-                "confidence": 95
+def get_rag_answer(context: dict, query: str) -> dict:
+    """Find matches in the vector database and generate answer via Groq LLM."""
+    documents = context.get("documents", [])
+    openai_client = context.get("openai_client")
+    groq_client = context.get("groq_client")
+    
+    try:
+        # Search the vector database using stateless function
+        results = search_vector_db(openai_client, documents, query, top_k=2)
+        
+        if results and results[0]["similarity"] > 0.30:
+            best_match = results[0]
+            logger.info(f"RAG hit: source={best_match['metadata'].get('source')} | similarity={best_match['similarity']:.3f}")
+            
+            combined_context = "\n\n".join([r["content"] for r in results])
+            sources = list(set([r["metadata"].get("source", "unknown") for r in results]))
+            
+            response = answer_with_context(groq_client, query, combined_context)
+            
+            confidence = int(best_match["similarity"] * 100)
+            confidence = min(99, max(50, confidence))
+            
+            return {
+                "response": response,
+                "confidence": confidence,
+                "type": "rag",
+                "sources": sources
             }
-        }
+    except Exception as e:
+        logger.error(f"Functional RAG routing error: {e}", exc_info=True)
+        
+    logger.info("RAG search missed: using default policy instruction responses.")
+    return {
+        "response": "I couldn't find a direct answer in our documentation. Try asking about: team invites, cancellation steps, mobile app features, password resets, pricing subscription plans, or refund policies.",
+        "confidence": 50,
+        "type": "rag",
+        "sources": ["Default System Route"]
+    }
+
+def chat_with_agent(context: dict, query: str) -> dict:
+    """Route queries dynamically to Text-to-SQL or Document RAG handlers."""
+    query_lower = query.lower()
+    db_path = context.get("db_path")
     
-    def _get_rag_answer(self, query: str) -> dict:
-        """Get answer from knowledge base."""
-        query_lower = query.lower()
-        
-        for key, data in self.responses.items():
-            for keyword in data["keywords"]:
-                if keyword in query_lower:
-                    return {
-                        "response": data["answer"],
-                        "confidence": data["confidence"],  # FIXED: 95, not 9500
-                        "type": "rag",
-                        "sources": ["Knowledge Base"]
-                    }
-        
-        return {
-            "response": "I couldn't find that. Try asking about: invites, cancellation, mobile app, password reset, subscription plans, or refunds.",
-            "confidence": 50,
-            "type": "rag",
-            "sources": ["Default"]
-        }
+    db_keywords = ["ticket", "tickets", "open", "resolved", "priority", 
+                   "assigned to", "satisfaction", "count tickets", "how many",
+                   "show me", "list tickets", "tickets by", "group by", "average satisfaction"]
+                   
+    is_db_query = any(keyword in query_lower for keyword in db_keywords)
     
-    def chat(self, query: str) -> dict:
-        """Route to appropriate handler."""
-        query_lower = query.lower()
-        
-        # Check if it's a database/ticket question
-        db_keywords = ["ticket", "tickets", "open", "resolved", "priority", 
-                       "assigned to", "satisfaction", "count tickets", "how many",
-                       "show me", "list tickets", "tickets by", "group by"]
-        
-        is_db_query = any(keyword in query_lower for keyword in db_keywords)
-        
-        if is_db_query:
-            try:
-                result = self.t2sql.answer(query)
-                # FIXED: Return correct confidence
+    if is_db_query:
+        logger.info(f"Routing query to SQL service: {query}")
+        try:
+            result = answer_sql_question(db_path, query)
+            
+            # Check for SQL error cases
+            if not result.get("sql") and "error" in result.get("answer", "").lower():
                 return {
                     "query": query,
                     "response": result["answer"],
-                    "confidence": 94,  # Fixed at 94% for SQL
-                    "type": "sql",
-                    "sql": result.get("sql"),
-                    "sources": ["Database"],
-                    "documents_used": 0
-                }
-            except Exception as e:
-                return {
-                    "query": query,
-                    "response": f"Database error: {e}",
                     "confidence": 50,
                     "type": "error",
                     "sources": []
                 }
-        else:
-            rag_result = self._get_rag_answer(query)
+                
             return {
                 "query": query,
-                "response": rag_result["response"],
-                "confidence": rag_result["confidence"],  # FIXED: 95 not 9500
-                "type": rag_result["type"],
-                "sources": rag_result["sources"]
+                "response": result["answer"],
+                "confidence": 94,
+                "type": "sql",
+                "sql": result.get("sql"),
+                "sources": ["Database Query"],
+                "documents_used": 0
             }
-
-if __name__ == "__main__":
-    agent = TruffleAgent()
-    
-    test_queries = [
-        "How do I invite team members?",
-        "How many open tickets?",
-        "What subscription plans do you offer?"
-    ]
-    
-    for query in test_queries:
-        print(f"\n{'='*50}")
-        print(f"Q: {query}")
-        result = agent.chat(query)
-        print(f"A: {result['response'][:100]}...")
-        print(f"Confidence: {result['confidence']}%")
+        except Exception as e:
+            logger.error(f"SQL service router failed: {e}", exc_info=True)
+            return {
+                "query": query,
+                "response": "An error occurred while compiling your database query. Please try again.",
+                "confidence": 50,
+                "type": "error",
+                "sources": []
+            }
+    else:
+        logger.info(f"Routing query to RAG service: {query}")
+        rag_result = get_rag_answer(context, query)
+        return {
+            "query": query,
+            "response": rag_result["response"],
+            "confidence": rag_result["confidence"],
+            "type": rag_result["type"],
+            "sources": rag_result["sources"]
+        }

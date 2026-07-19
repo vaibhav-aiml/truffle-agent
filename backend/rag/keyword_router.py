@@ -1,13 +1,9 @@
-﻿"""Keyword-based router for Truffle - Direct matching."""
+"""Keyword-based routing service for support queries."""
 
-class KeywordRouter:
-    """Routes questions to correct answers using keywords."""
-    
-    def __init__(self):
-        self.rules = [
-            {
-                "keywords": ["invite", "inviting", "add member", "team member", "add person", "new member", "add someone"],
-                "answer": """
+RULES = [
+    {
+        "keywords": ["invite", "inviting", "add member", "team member", "add person", "new member", "add someone"],
+        "answer": """
 HOW TO INVITE TEAM MEMBERS:
 
 Step 1: Log into your account dashboard
@@ -30,11 +26,11 @@ Team Limits by Plan:
 - Premium: 20 members  
 - Enterprise: Unlimited
 """,
-                "source": "Team Management Guide"
-            },
-            {
-                "keywords": ["cancel", "cancellation", "unsubscribe", "stop billing", "end subscription"],
-                "answer": """
+        "source": "Team Management Guide"
+    },
+    {
+        "keywords": ["cancel", "cancellation", "unsubscribe", "stop billing", "end subscription"],
+        "answer": """
 HOW TO CANCEL YOUR SUBSCRIPTION:
 
 Step 1: Go to Settings → Billing
@@ -53,11 +49,11 @@ Alternatives to Cancellation:
 - Pause subscription (up to 3 months)
 - Switch to annual billing (save 20%)
 """,
-                "source": "Cancellation Guide"
-            },
-            {
-                "keywords": ["mobile app", "phone app", "ios app", "android app", "download app"],
-                "answer": """
+        "source": "Cancellation Guide"
+    },
+    {
+        "keywords": ["mobile app", "phone app", "ios app", "android app", "download app"],
+        "answer": """
 MOBILE APP INFORMATION:
 
 Download from:
@@ -67,7 +63,7 @@ Download from:
 Features:
 - Push notifications for new tickets
 - Reply to customers on-the-go
-- Upload photos from phone
+- Attach photos from phone
 - Voice-to-text typing
 - Offline mode (saves drafts)
 
@@ -77,11 +73,11 @@ Requirements:
 
 The mobile app is free for all subscribers!
 """,
-                "source": "Mobile App Guide"
-            },
-            {
-                "keywords": ["password", "reset password", "forgot password"],
-                "answer": """
+        "source": "Mobile App Guide"
+    },
+    {
+        "keywords": ["password", "reset password", "forgot password"],
+        "answer": """
 HOW TO RESET YOUR PASSWORD:
 
 Step 1: Go to login page
@@ -99,11 +95,11 @@ Password Requirements:
 
 If you don't receive the email, check your spam folder.
 """,
-                "source": "Password Reset Guide"
-            },
-            {
-                "keywords": ["refund", "money back", "get refund"],
-                "answer": """
+        "source": "Password Reset Guide"
+    },
+    {
+        "keywords": ["refund", "money back", "get refund"],
+        "answer": """
 REFUND POLICY:
 
 30-day money-back guarantee on all plans.
@@ -116,11 +112,11 @@ To request a refund:
 Refunds take 5-7 business days to process.
 The refund goes back to your original payment method.
 """,
-                "source": "Refund Policy"
-            },
-            {
-                "keywords": ["subscription", "plans", "pricing", "basic", "premium", "enterprise"],
-                "answer": """
+        "source": "Refund Policy"
+    },
+    {
+        "keywords": ["subscription", "plans", "pricing", "basic", "premium", "enterprise"],
+        "answer": """
 SUBSCRIPTION PLANS:
 
 Basic Plan - $9.99/month:
@@ -142,42 +138,25 @@ Enterprise Plan - $99.99/month:
 
 Save 20% with annual billing!
 """,
-                "source": "Subscription Plans"
-            }
-        ]
-    
-    def route(self, query: str) -> dict:
-        """Find matching rule for the query."""
-        query_lower = query.lower()
-        
-        for rule in self.rules:
-            for keyword in rule["keywords"]:
-                if keyword in query_lower:
-                    return {
-                        "response": rule["answer"],
-                        "source": rule["source"],
-                        "confidence": 0.95
-                    }
-        
-        # Default response
-        return {
-            "response": "I'm not sure about that. Please contact support for help.",
-            "source": "Default",
-            "confidence": 0.3
-        }
+        "source": "Subscription Plans"
+    }
+]
 
-if __name__ == "__main__":
-    router = KeywordRouter()
+def route_keyword_query(query: str) -> dict:
+    """Route queries to predefined policy answers based on exact keyword inclusion."""
+    query_lower = query.lower()
     
-    test_queries = [
-        "How do I invite team members?",
-        "How do I cancel my subscription?",
-        "Is there a mobile app?",
-        "How do I reset my password?"
-    ]
-    
-    for q in test_queries:
-        result = router.route(q)
-        print(f"\nQ: {q}")
-        print(f"A: {result['response'][:100]}...")
-        print(f"Confidence: {result['confidence']:.0%}")
+    for rule in RULES:
+        for keyword in rule["keywords"]:
+            if keyword in query_lower:
+                return {
+                    "response": rule["answer"],
+                    "source": rule["source"],
+                    "confidence": 0.95
+                }
+                
+    return {
+        "response": "I'm not sure about that. Please contact support for help.",
+        "source": "Default",
+        "confidence": 0.3
+    }

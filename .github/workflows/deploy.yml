@@ -1,0 +1,26 @@
+# .github/workflows/deploy.yml
+name: Deploy to Streamlit Cloud
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Deploy Client
+        run: |
+          pip install streamlit
+
+      - name: Deploy to Streamlit
+        run: |
+          streamlit deploy run_complete_truffle.py

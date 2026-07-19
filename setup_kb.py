@@ -1,16 +1,28 @@
-﻿"""Complete knowledge base with detailed information."""
+"""Setup script to index knowledge base documents into the vector database."""
 
-from backend.rag.vector_store import SimpleVectorStore
+import os
+from pathlib import Path
+from backend.config import settings
+from backend.services.vector_service import add_document_to_db, create_openai_client, save_vector_db
 
-def setup_complete_kb():
-    """Set up complete knowledge base."""
-    store = SimpleVectorStore()
+def run_knowledge_base_setup():
+    storage_path = str(settings.VECTOR_DB_DIR)
+    vectors_file = Path(storage_path) / "vectors.json"
     
-    # Clear existing
-    store.documents = []
+    print(f"Initializing knowledge base at: {storage_path}")
     
-    # Add detailed documents
-    documents = [
+    if vectors_file.exists():
+        try:
+            vectors_file.unlink()
+            print("  Cleared old vector embeddings file.")
+        except Exception as e:
+            print(f"  Warning: could not delete old vector database file: {e}")
+            
+    openai_client = create_openai_client()
+    documents = []
+    
+    # Detailed documents list
+    kb_documents = [
         {
             "id": "payment_001",
             "source": "payment_methods.md",
@@ -185,12 +197,20 @@ After Refund:
         }
     ]
     
-    for doc in documents:
-        store.add_document(doc)
-        print(f"✅ Added: {doc['source']}")
-    
-    print(f"\n📊 Total documents indexed: {store.count()}")
-    return store
+    print("  Creating vector embeddings for documents...")
+    for doc in kb_documents:
+        print(f"    - Embedding: {doc['source']}")
+        documents = add_document_to_db(
+            openai_client, 
+            documents, 
+            doc_id=doc["id"], 
+            content=doc["content"], 
+            source=doc["source"], 
+            category=doc["category"]
+        )
+        
+    save_vector_db(storage_path, documents)
+    print(f"\n[OK] Knowledge base setup complete! Indexed {len(documents)} documents.")
 
 if __name__ == "__main__":
-    setup_complete_kb()
+    run_knowledge_base_setup()

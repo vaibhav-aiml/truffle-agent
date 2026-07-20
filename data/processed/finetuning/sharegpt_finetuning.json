@@ -1,0 +1,326 @@
+[
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query for this natural language question against the tickets table.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nHow many open tickets do we have?"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT COUNT(*) FROM tickets WHERE status = ?"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow tickets assigned to Alice"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Alice') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nList tickets for Alice"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Alice') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow tickets assigned to Bob"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Bob') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nList tickets for Bob"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Bob') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow tickets assigned to Charlie"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Charlie') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nList tickets for Charlie"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Charlie') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow tickets assigned to Diana"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Diana') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nList tickets for Diana"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Diana') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow tickets assigned to Eve"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Eve') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets assigned to a specific agent.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nList tickets for Eve"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE UPPER(assigned_to) = UPPER('Eve') LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to count tickets matching a specific status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nHow many open tickets do we have?"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT COUNT(*) FROM tickets WHERE status = 'open'"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets by status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow all open tickets"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE status = 'open' LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to count tickets matching a specific status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nHow many resolved tickets do we have?"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT COUNT(*) FROM tickets WHERE status = 'resolved'"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets by status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow all resolved tickets"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE status = 'resolved' LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to count tickets matching a specific status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nHow many closed tickets do we have?"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT COUNT(*) FROM tickets WHERE status = 'closed'"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets by status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow all closed tickets"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE status = 'closed' LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to count tickets matching a specific status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nHow many in_progress tickets do we have?"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT COUNT(*) FROM tickets WHERE status = 'in_progress'"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Write a SQLite query to list tickets by status.\nTable schema: tickets (id, customer_name, customer_email, subject, description, status, priority, assigned_to, created_at, resolved_at, satisfaction_score, category)\n\nInput:\nShow all in_progress tickets"
+      },
+      {
+        "from": "gpt",
+        "value": "SELECT * FROM tickets WHERE status = 'in_progress' LIMIT 20"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer support question strictly using the context below. Source: payment_methods.md\n\nInput:\nContext:\n\nPAYMENT METHODS ACCEPTED - COMPLETE LIST:\n\nWe accept the following payment methods:\n\nCredit and Debit Cards:\n\u2022 Visa (all types)\n\u2022 Mastercard (all types)\n\u2022 American Express (Amex)\n\u2022 Discover Card\n\u2022 JCB\n\u2022 Diners Club\n\nDigital Wallets:\n\u2022 PayPal\n\u2022 Apple Pay\n\u2022 Google Pay\n\u2022 Samsung Pay\n\u2022 Venmo\n\nBank Transfers:\n\u2022 ACH Transfer (US only)\n\u2022 Wire Transfer (international)\n\u2022 Direct Debit (European banks)\n\nEnterprise Plans Only:\n\u2022 Purchase Order (PO)\n\u2022 Net 30 terms\n\u2022 Invoice billing\n\nImportant Notes:\n- All payments are processed securely via Stripe\n- We do not store full credit card details\n- 3D Secure verification for card payments\n- Automatic receipts sent to registered email\n- Update payment methods anytime in Settings \u2192 Billing\n\nNot Accepted:\n\u2022 Cryptocurrency (Bitcoin, Ethereum, etc.)\n\u2022 Cash or checks by mail\n\u2022 Gift cards\n\n\nQuery: Explain the policy or details outlined in this document."
+      },
+      {
+        "from": "gpt",
+        "value": "This document covers billing policy. Here are the key details:\n\nPAYMENT METHODS ACCEPTED - COMPLETE LIST:\n\nWe accept the following payment methods:\n\nCredit and Debit Cards:\n\u2022 Visa (all types)\n\u2022 Mastercard (all types)\n\u2022 American Express (Amex)\n\u2022 Discover Card\n\u2022 JCB\n\u2022 Diners Club\n\nDigital Wallets:\n\u2022 PayPal\n\u2022 Apple Pay\n\u2022 Google Pay\n\u2022 Samsung Pay\n\u2022 Venmo\n\nBank Transfers:\n\u2022 ACH Transfer (US only)\n\u2022 Wire Transfer (international)\n\u2022 Direct Debit (European banks)\n\nEnterprise Plans Only:\n\u2022 Purchase Order (PO)\n\u2022 Net 30 terms\n\u2022 Invoice billing\n\nImportant Notes:\n- All payments are processed securely via Stripe\n- We do not store full credit card details\n- 3D Secure verification for card payments\n- Automatic receipts sent to registered email\n- Update payment methods anytime in Settings \u2192 Billing\n\nNot Accepted:\n\u2022 Cryptocurrency (Bitcoin, Ethereum, etc.)\n\u2022 Cash or checks by mail\n\u2022 Gift cards\n"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer query based on the billing context.\n\nInput:\nContext:\n\nPAYMENT METHODS ACCEPTED - COMPLETE LIST:\n\nWe accept the following payment methods:\n\nCredit and Debit Cards:\n\u2022 Visa (all types)\n\u2022 Mastercard (all types)\n\u2022 American Express (Amex)\n\u2022 Discover Card\n\u2022 JCB\n\u2022 Diners Club\n\nDigital Wallets:\n\u2022 PayPal\n\u2022 Apple Pay\n\u2022 Google Pay\n\u2022 Samsung Pay\n\u2022 Venmo\n\nBank Transfers:\n\u2022 ACH Transfer (US only)\n\u2022 Wire Transfer (international)\n\u2022 Direct Debit (European banks)\n\nEnterprise Plans Only:\n\u2022 Purchase Order (PO)\n\u2022 Net 30 terms\n\u2022 Invoice billing\n\nImportant Notes:\n- All payments are processed securely via Stripe\n- We do not store full credit card details\n- 3D Secure verification for card payments\n- Automatic receipts sent to registered email\n- Update payment methods anytime in Settings \u2192 Billing\n\nNot Accepted:\n\u2022 Cryptocurrency (Bitcoin, Ethereum, etc.)\n\u2022 Cash or checks by mail\n\u2022 Gift cards\n\n\nQuery: What payment methods do you accept?"
+      },
+      {
+        "from": "gpt",
+        "value": "We accept Visa, Mastercard, American Express, Discover, JCB, Diners Club, PayPal, Apple Pay, Google Pay, Samsung Pay, Venmo, and ACH/Wire transfers (Enterprise plans only)."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer support question strictly using the context below. Source: subscription_plans.md\n\nInput:\nContext:\n\nSUBSCRIPTION PLANS - COMPLETE DETAILS:\n\nBASIC PLAN - $9.99 USD per month:\nFeatures:\n\u2022 5 team members maximum\n\u2022 100 GB storage space\n\u2022 Email support only (24-hour response)\n\u2022 1,000 API calls per month\n\u2022 Basic analytics dashboard\n\u2022 Community forum access\n\u2022 Monthly billing only\n\u2022 No annual discount\n\nPREMIUM PLAN - $29.99 USD per month:\nFeatures:\n\u2022 20 team members maximum\n\u2022 500 GB storage space\n\u2022 Priority email + chat support (4-hour response)\n\u2022 10,000 API calls per month\n\u2022 Advanced analytics with custom reports\n\u2022 Custom integrations available\n\u2022 Monthly or annual billing\n\u2022 20% discount with annual billing ($287.90/year)\n\nENTERPRISE PLAN - $99.99 USD per month:\nFeatures:\n\u2022 Unlimited team members\n\u2022 2 TB (2048 GB) storage space\n\u2022 24/7 dedicated phone, email, and chat support\n\u2022 Unlimited API calls\n\u2022 Custom analytics and AI features\n\u2022 Custom integrations and SSO\n\u2022 Monthly or annual billing\n\u2022 SLA guarantee (99.9% uptime commitment)\n\u2022 Dedicated account manager\n\u2022 Onboarding training included\n\nAnnual Billing Discount:\nSave 20% on any plan when paying annually.\nExample: Premium monthly ($29.99) vs annual ($287.90 = $23.99/month)\n\n\nQuery: Explain the policy or details outlined in this document."
+      },
+      {
+        "from": "gpt",
+        "value": "This document covers billing policy. Here are the key details:\n\nSUBSCRIPTION PLANS - COMPLETE DETAILS:\n\nBASIC PLAN - $9.99 USD per month:\nFeatures:\n\u2022 5 team members maximum\n\u2022 100 GB storage space\n\u2022 Email support only (24-hour response)\n\u2022 1,000 API calls per month\n\u2022 Basic analytics dashboard\n\u2022 Community forum access\n\u2022 Monthly billing only\n\u2022 No annual discount\n\nPREMIUM PLAN - $29.99 USD per month:\nFeatures:\n\u2022 20 team members maximum\n\u2022 500 GB storage space\n\u2022 Priority email + chat support (4-hour response)\n\u2022 10,000 API calls per month\n\u2022 Advanced analytics with custom reports\n\u2022 Custom integrations available\n\u2022 Monthly or annual billing\n\u2022 20% discount with annual billing ($287.90/year)\n\nENTERPRISE PLAN - $99.99 USD per month:\nFeatures:\n\u2022 Unlimited team members\n\u2022 2 TB (2048 GB) storage space\n\u2022 24/7 dedicated phone, email, and chat support\n\u2022 Unlimited API calls\n\u2022 Custom analytics and AI features\n\u2022 Custom integrations and SSO\n\u2022 Monthly or annual billing\n\u2022 SLA guarantee (99.9% uptime commitment)\n\u2022 Dedicated account manager\n\u2022 Onboarding training included\n\nAnnual Billing Discount:\nSave 20% on any plan when paying annually.\nExample: Premium monthly ($29.99) vs annual ($287.90 = $23.99/month)\n"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer query based on the pricing context.\n\nInput:\nContext:\n\nSUBSCRIPTION PLANS - COMPLETE DETAILS:\n\nBASIC PLAN - $9.99 USD per month:\nFeatures:\n\u2022 5 team members maximum\n\u2022 100 GB storage space\n\u2022 Email support only (24-hour response)\n\u2022 1,000 API calls per month\n\u2022 Basic analytics dashboard\n\u2022 Community forum access\n\u2022 Monthly billing only\n\u2022 No annual discount\n\nPREMIUM PLAN - $29.99 USD per month:\nFeatures:\n\u2022 20 team members maximum\n\u2022 500 GB storage space\n\u2022 Priority email + chat support (4-hour response)\n\u2022 10,000 API calls per month\n\u2022 Advanced analytics with custom reports\n\u2022 Custom integrations available\n\u2022 Monthly or annual billing\n\u2022 20% discount with annual billing ($287.90/year)\n\nENTERPRISE PLAN - $99.99 USD per month:\nFeatures:\n\u2022 Unlimited team members\n\u2022 2 TB (2048 GB) storage space\n\u2022 24/7 dedicated phone, email, and chat support\n\u2022 Unlimited API calls\n\u2022 Custom analytics and AI features\n\u2022 Custom integrations and SSO\n\u2022 Monthly or annual billing\n\u2022 SLA guarantee (99.9% uptime commitment)\n\u2022 Dedicated account manager\n\u2022 Onboarding training included\n\nAnnual Billing Discount:\nSave 20% on any plan when paying annually.\nExample: Premium monthly ($29.99) vs annual ($287.90 = $23.99/month)\n\n\nQuery: What subscription plans do you offer?"
+      },
+      {
+        "from": "gpt",
+        "value": "We offer:\n- Basic: $9.99/mo (5 members, 100GB storage, email support)\n- Premium: $29.99/mo (20 members, 500GB storage, priority support, annual 20% discount)\n- Enterprise: $99.99/mo (Unlimited members, 2TB storage, 24/7 dedicated support, SLA uptime commitment)"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer support question strictly using the context below. Source: password_reset.md\n\nInput:\nContext:\n\nPASSWORD RESET - COMPLETE GUIDE:\n\nStep-by-Step Instructions:\n\nStep 1: Go to the login page (app.yourdomain.com)\nStep 2: Click the \"Forgot Password\" link below the login button\nStep 3: Enter your registered email address\nStep 4: Click the \"Send Reset Link\" button\nStep 5: Check your email inbox (allow 2-3 minutes)\nStep 6: Click the password reset link in the email\nStep 7: Enter your new password\nStep 8: Confirm your new password\nStep 9: Click \"Reset Password\"\nStep 10: Log in with your new password\n\nPassword Requirements:\n\u2022 Minimum 8 characters\n\u2022 At least one uppercase letter (A-Z)\n\u2022 At least one lowercase letter (a-z)\n\u2022 At least one number (0-9)\n\u2022 Special characters are optional but recommended\n\nTroubleshooting:\n\u2022 Check spam/junk folder if email not received within 5 minutes\n\u2022 Reset link expires after 1 hour for security\n\u2022 Request a new link if expired\n\u2022 Contact support if you need additional help\n\u2022 Make sure you're using the correct email address\n\n\nQuery: Explain the policy or details outlined in this document."
+      },
+      {
+        "from": "gpt",
+        "value": "This document covers account policy. Here are the key details:\n\nPASSWORD RESET - COMPLETE GUIDE:\n\nStep-by-Step Instructions:\n\nStep 1: Go to the login page (app.yourdomain.com)\nStep 2: Click the \"Forgot Password\" link below the login button\nStep 3: Enter your registered email address\nStep 4: Click the \"Send Reset Link\" button\nStep 5: Check your email inbox (allow 2-3 minutes)\nStep 6: Click the password reset link in the email\nStep 7: Enter your new password\nStep 8: Confirm your new password\nStep 9: Click \"Reset Password\"\nStep 10: Log in with your new password\n\nPassword Requirements:\n\u2022 Minimum 8 characters\n\u2022 At least one uppercase letter (A-Z)\n\u2022 At least one lowercase letter (a-z)\n\u2022 At least one number (0-9)\n\u2022 Special characters are optional but recommended\n\nTroubleshooting:\n\u2022 Check spam/junk folder if email not received within 5 minutes\n\u2022 Reset link expires after 1 hour for security\n\u2022 Request a new link if expired\n\u2022 Contact support if you need additional help\n\u2022 Make sure you're using the correct email address\n"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer query based on the account context.\n\nInput:\nContext:\n\nPASSWORD RESET - COMPLETE GUIDE:\n\nStep-by-Step Instructions:\n\nStep 1: Go to the login page (app.yourdomain.com)\nStep 2: Click the \"Forgot Password\" link below the login button\nStep 3: Enter your registered email address\nStep 4: Click the \"Send Reset Link\" button\nStep 5: Check your email inbox (allow 2-3 minutes)\nStep 6: Click the password reset link in the email\nStep 7: Enter your new password\nStep 8: Confirm your new password\nStep 9: Click \"Reset Password\"\nStep 10: Log in with your new password\n\nPassword Requirements:\n\u2022 Minimum 8 characters\n\u2022 At least one uppercase letter (A-Z)\n\u2022 At least one lowercase letter (a-z)\n\u2022 At least one number (0-9)\n\u2022 Special characters are optional but recommended\n\nTroubleshooting:\n\u2022 Check spam/junk folder if email not received within 5 minutes\n\u2022 Reset link expires after 1 hour for security\n\u2022 Request a new link if expired\n\u2022 Contact support if you need additional help\n\u2022 Make sure you're using the correct email address\n\n\nQuery: How do I reset my password?"
+      },
+      {
+        "from": "gpt",
+        "value": "1. Go to the login page.\n2. Click 'Forgot Password'.\n3. Enter your email.\n4. Click 'Send Reset Link'.\n5. Check email and click the link.\n6. Enter new password (min 8 chars, 1 uppercase, 1 lowercase, 1 number) and save."
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer support question strictly using the context below. Source: refund_policy.md\n\nInput:\nContext:\n\nREFUND POLICY - COMPLETE DETAILS:\n\n30-Day Money-Back Guarantee:\nWe offer a full 30-day money-back guarantee on all subscription plans.\n\nEligibility:\n\u2022 Any subscription plan qualifies\n\u2022 Must request within 30 days of first payment\n\u2022 Applies to first subscription only\n\u2022 No questions asked refund policy\n\nHow to Request a Refund:\n1. Log into your account dashboard\n2. Navigate to Settings \u2192 Billing\n3. Click on \"Request Refund\" button\n4. Select your reason from the dropdown (optional)\n5. Submit the request\n6. Confirmation email sent immediately\n\nProcessing Times by Payment Method:\n\u2022 Credit cards: 5-7 business days\n\u2022 PayPal: 3-5 business days\n\u2022 Bank transfers: 7-10 business days\n\u2022 Apple/Google Pay: 5-7 business days\n\nWhat Gets Refunded:\n\u2022 Full subscription amount for current month\n\u2022 No partial refunds for partial months\n\u2022 Annual plans: prorated refund for unused months\n\u2022 Setup fees: non-refundable\n\u2022 Custom development: non-refundable\n\nAfter Refund:\n\u2022 Account downgraded to free tier\n\u2022 Data retained for 30 days\n\u2022 Can reactivate anytime\n\n\nQuery: Explain the policy or details outlined in this document."
+      },
+      {
+        "from": "gpt",
+        "value": "This document covers billing policy. Here are the key details:\n\nREFUND POLICY - COMPLETE DETAILS:\n\n30-Day Money-Back Guarantee:\nWe offer a full 30-day money-back guarantee on all subscription plans.\n\nEligibility:\n\u2022 Any subscription plan qualifies\n\u2022 Must request within 30 days of first payment\n\u2022 Applies to first subscription only\n\u2022 No questions asked refund policy\n\nHow to Request a Refund:\n1. Log into your account dashboard\n2. Navigate to Settings \u2192 Billing\n3. Click on \"Request Refund\" button\n4. Select your reason from the dropdown (optional)\n5. Submit the request\n6. Confirmation email sent immediately\n\nProcessing Times by Payment Method:\n\u2022 Credit cards: 5-7 business days\n\u2022 PayPal: 3-5 business days\n\u2022 Bank transfers: 7-10 business days\n\u2022 Apple/Google Pay: 5-7 business days\n\nWhat Gets Refunded:\n\u2022 Full subscription amount for current month\n\u2022 No partial refunds for partial months\n\u2022 Annual plans: prorated refund for unused months\n\u2022 Setup fees: non-refundable\n\u2022 Custom development: non-refundable\n\nAfter Refund:\n\u2022 Account downgraded to free tier\n\u2022 Data retained for 30 days\n\u2022 Can reactivate anytime\n"
+      }
+    ]
+  },
+  {
+    "conversations": [
+      {
+        "from": "human",
+        "value": "Answer the customer query based on the refund policy context.\n\nInput:\nContext:\n\nREFUND POLICY - COMPLETE DETAILS:\n\n30-Day Money-Back Guarantee:\nWe offer a full 30-day money-back guarantee on all subscription plans.\n\nEligibility:\n\u2022 Any subscription plan qualifies\n\u2022 Must request within 30 days of first payment\n\u2022 Applies to first subscription only\n\u2022 No questions asked refund policy\n\nHow to Request a Refund:\n1. Log into your account dashboard\n2. Navigate to Settings \u2192 Billing\n3. Click on \"Request Refund\" button\n4. Select your reason from the dropdown (optional)\n5. Submit the request\n6. Confirmation email sent immediately\n\nProcessing Times by Payment Method:\n\u2022 Credit cards: 5-7 business days\n\u2022 PayPal: 3-5 business days\n\u2022 Bank transfers: 7-10 business days\n\u2022 Apple/Google Pay: 5-7 business days\n\nWhat Gets Refunded:\n\u2022 Full subscription amount for current month\n\u2022 No partial refunds for partial months\n\u2022 Annual plans: prorated refund for unused months\n\u2022 Setup fees: non-refundable\n\u2022 Custom development: non-refundable\n\nAfter Refund:\n\u2022 Account downgraded to free tier\n\u2022 Data retained for 30 days\n\u2022 Can reactivate anytime\n\n\nQuery: How do I request a refund?"
+      },
+      {
+        "from": "gpt",
+        "value": "You qualify for a 30-day money-back guarantee. Go to Settings -> Billing, click 'Request Refund', and submit. Processing takes 5-7 business days for cards, 3-5 days for PayPal."
+      }
+    ]
+  }
+]

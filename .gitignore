@@ -4,11 +4,6 @@ __pycache__/
 venv/
 .env
 
-# Data
-*.db
-data/processed/
-data/raw/
-
 # IDE
 .vscode/
 .idea/
@@ -20,3 +15,11 @@ data/*.log
 
 # Local artifacts
 project_structure.txt
+
+# Data - only ignore empty placeholder dirs, NOT the actual data files
+# Keep: data/processed/sql_db/tickets.db (required for app to run)
+# Keep: data/processed/embeddings/vectors.json (vector knowledge base)
+# Keep: data/processed/finetuning/*.json (finetuning datasets)
+# Keep: data/raw/ structure (for setup scripts)
+data/processed/chunks/
+data/synthetic/

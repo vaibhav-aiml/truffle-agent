@@ -175,16 +175,30 @@ if page == "💬  Chat":
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    # Render past messages with custom bubbles
+    # Render all past messages (including metadata) from session state
     for msg in st.session_state.messages:
         render_chat_message(msg["role"], msg["content"])
+        # Re-render metadata for assistant messages
+        if msg["role"] == "assistant" and "meta" in msg:
+            meta = msg["meta"]
+            render_chat_metadata(
+                confidence=meta["confidence"],
+                response_time=meta["response_time"],
+                from_cache=meta["from_cache"],
+                source_type=meta.get("source_type", "")
+            )
+            if meta.get("sql"):
+                render_sql_block(meta["sql"])
 
-    # Input handling
+    # ALWAYS render chat_input so it's visible on every run
+    chat_query = st.chat_input("Ask about support, tickets, or policies…")
+
+    # Quick question takes priority if set
     if "quick_question" in st.session_state:
         query = st.session_state.quick_question
         del st.session_state.quick_question
     else:
-        query = st.chat_input("Ask about support, tickets, or policies…")
+        query = chat_query
 
     if query:
         MAX_QUERY_LENGTH = 500
@@ -199,14 +213,8 @@ if page == "💬  Chat":
                 "error"
             )
         else:
-            # Add user message
+            # Add user message to session state
             st.session_state.messages.append({"role": "user", "content": query})
-            render_chat_message("user", query)
-
-            # Show typing indicator placeholder
-            typing_placeholder = st.empty()
-            with typing_placeholder:
-                render_typing_indicator()
 
             start_time = time.perf_counter()
 
@@ -228,28 +236,25 @@ if page == "💬  Chat":
             if response_time < 0.01:
                 response_time = 0.05
 
-            # Remove typing indicator
-            typing_placeholder.empty()
-
-            # Render assistant response
-            render_chat_message("assistant", result["response"])
-
-            # Response metadata pills
             confidence = result.get("confidence", 50)
             if confidence > 100:
                 confidence = confidence / 100
-            render_chat_metadata(
-                confidence=confidence,
-                response_time=response_time,
-                from_cache=result.get("from_cache", False),
-                source_type=result.get("type", "")
-            )
 
-            # SQL block (if applicable)
-            if result.get("sql"):
-                render_sql_block(result["sql"])
+            # Store assistant message WITH metadata in session state
+            st.session_state.messages.append({
+                "role": "assistant",
+                "content": result["response"],
+                "meta": {
+                    "confidence": confidence,
+                    "response_time": response_time,
+                    "from_cache": result.get("from_cache", False),
+                    "source_type": result.get("type", ""),
+                    "sql": result.get("sql"),
+                }
+            })
 
-            st.session_state.messages.append({"role": "assistant", "content": result["response"]})
+            # Rerun so the page re-renders with updated messages AND the chat_input visible
+            st.rerun()
 
 # ==================== WORKFLOW PAGE ====================
 elif page == "🤖  Workflows":

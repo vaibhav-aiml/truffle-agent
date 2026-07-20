@@ -1,10 +1,17 @@
 """Evaluation dashboard displaying dynamic system accuracy metrics."""
 
 import streamlit as st
-import sqlite3
 from pathlib import Path
 from backend.evaluation.metrics import run_suite_evaluation
 from backend.config import settings
+from frontend.components.ui_components import (
+    render_page_header,
+    render_bento_metrics,
+    render_section_divider,
+    render_test_results_table,
+    render_alert_banner,
+)
+
 
 def get_database_stats() -> dict:
     """Get database statistics."""
@@ -37,48 +44,51 @@ def get_database_stats() -> dict:
     except Exception as e:
         return {"error": f"Database read error: {e}"}
 
+
 def show_dashboard():
-    """Display the evaluation dashboard."""
-    st.markdown("## 📊 Truffle Evaluation Dashboard")
-    st.markdown("Dynamic performance and accuracy calculations matching the test cases.")
+    """Display the evaluation dashboard with the new design system."""
+    render_page_header("📊", "Evaluation Dashboard", "Dynamic performance and accuracy calculations")
     
-    # 1. Trigger Suite Run
-    with st.spinner("🔄 Running dynamic test suite evaluation..."):
+    # Run evaluation suite
+    with st.spinner("🔄 Running dynamic test suite evaluation…"):
         suite_results = run_suite_evaluation()
         
     if "error" in suite_results:
-        st.error(f"Failed to run evaluation suite: {suite_results['error']}")
+        render_alert_banner(f"Failed to run evaluation suite: {suite_results['error']}", "error")
         return
-        
-    col1, col2 = st.columns(2)
+
+    # ── Performance Metrics (Bento Grid) ──
+    accuracy = suite_results["accuracy"]
+    acc_accent = "green" if accuracy >= 80 else ("amber" if accuracy >= 60 else "rose")
     
-    with col1:
-        st.markdown("### 🤖 Dynamic System Performance")
-        st.metric("Test Accuracy Score", f"{suite_results['accuracy']:.1f}%")
-        st.metric("Avg Latency per Query", f"{suite_results['avg_response_time']:.3f}s")
-        st.metric("Tests Executed", f"{suite_results['total_cases']}")
-        st.metric("Tests Passed", f"{suite_results['passed_cases']}/{suite_results['total_cases']}")
+    avg_latency = suite_results["avg_response_time"]
+    lat_accent = "green" if avg_latency < 0.5 else ("amber" if avg_latency < 2.0 else "rose")
     
-    with col2:
-        st.markdown("### 🗄️ Database Statistics")
-        db_stats = get_database_stats()
-        if "error" not in db_stats:
-            for key, value in db_stats.items():
-                st.metric(key, value)
-        else:
-            st.warning(db_stats["error"])
-            
-    st.markdown("---")
-    st.markdown("### 📈 Test Cases Execution Detail Log")
-    
-    for case in suite_results["results"]:
-        status_icon = "✅" if case["passed"] else "❌"
-        
-        with st.expander(f"{status_icon} Case #{case['id']} - Query: \"{case['query']}\""):
-            st.markdown(f"**Expected Handler:** `{case['expected_source']}`")
-            st.markdown(f"**Actual Routed Handler:** `{case['actual_source']}`")
-            st.markdown(f"**Execution Latency:** `{case['latency']:.4f}s`")
-            st.markdown(f"**Detail:** {case['details']}")
+    render_bento_metrics([
+        {"value": f"{accuracy:.1f}%", "label": "Test Accuracy", "accent": acc_accent},
+        {"value": f"{avg_latency:.3f}s", "label": "Avg Latency", "accent": lat_accent},
+        {"value": str(suite_results["total_cases"]), "label": "Tests Executed", "accent": "cyan"},
+        {"value": f"{suite_results['passed_cases']}/{suite_results['total_cases']}", "label": "Tests Passed", "accent": "violet"},
+    ])
+
+    # ── Database Statistics ──
+    db_stats = get_database_stats()
+    if "error" not in db_stats:
+        render_bento_metrics([
+            {"value": str(db_stats["Total Tickets"]), "label": "Total Tickets", "accent": "violet"},
+            {"value": str(db_stats["Open Tickets"]), "label": "Open Tickets", "accent": "amber"},
+            {"value": db_stats["Resolution Rate"], "label": "Resolution Rate", "accent": "green"},
+            {"value": db_stats["Avg Satisfaction"], "label": "Avg Satisfaction", "accent": "cyan"},
+        ])
+    else:
+        render_alert_banner(db_stats["error"], "warning")
+
+    render_section_divider()
+
+    # ── Test Results Table ──
+    render_page_header("📝", "Test Execution Log", "Detailed results for each evaluation case")
+    render_test_results_table(suite_results["results"])
+
 
 if __name__ == "__main__":
     show_dashboard()

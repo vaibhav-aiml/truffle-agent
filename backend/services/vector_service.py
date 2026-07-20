@@ -101,9 +101,26 @@ def add_document_to_db(client: OpenAI | None, documents: list[dict], doc_id: str
 
 def search_vector_db(client: OpenAI | None, documents: list[dict], query: str, top_k: int = 3) -> list[dict]:
     """Retrieve top k most similar document records matching query."""
+    if not documents:
+        return []
+
+    # If client is provided, generate embedding and perform validation
+    query_embedding = None
+    if client:
+        query_embedding = get_embedding(client, query)
+        db_dim = len(documents[0]["embedding"])
+        query_dim = len(query_embedding)
+        
+        if db_dim != query_dim:
+            logger.warning(
+                f"Embedding dimension mismatch: DB={db_dim}, Query={query_dim}. "
+                f"Falling back to local keyword search."
+            )
+            client = None
+
     if not client:
         # Local keyword-matching fallback search for offline running
-        logger.info("OpenAI client missing. Performing local keyword search ranking fallback.")
+        logger.info("OpenAI client missing or mismatched. Performing local keyword search ranking fallback.")
         query_words = set(query.strip().lower().split())
         stop_words = {"what", "is", "your", "how", "do", "i", "the", "a", "an", "to", "for", "in", "of", "and", "we", "accept"}
         query_keywords = query_words - stop_words
@@ -129,15 +146,23 @@ def search_vector_db(client: OpenAI | None, documents: list[dict], query: str, t
         results.sort(key=lambda x: x["similarity"], reverse=True)
         return results[:top_k]
 
-    query_embedding = get_embedding(client, query)
+    # Vectorized cosine similarity computation
+    query_arr = np.array(query_embedding)
+    doc_matrix = np.array([doc["embedding"] for doc in documents])  # Shape: (N, D)
+    
+    dot_products = np.dot(doc_matrix, query_arr)
+    query_norm = np.linalg.norm(query_arr)
+    doc_norms = np.linalg.norm(doc_matrix, axis=1)
+    
+    similarities = dot_products / (doc_norms * query_norm + 1e-8)
+    
     results = []
-    for doc in documents:
-        similarity = calculate_cosine_similarity(query_embedding, doc["embedding"])
+    for i, doc in enumerate(documents):
         results.append({
             "id": doc["id"],
             "content": doc["content"],
             "metadata": doc["metadata"],
-            "similarity": similarity
+            "similarity": float(similarities[i])
         })
     results.sort(key=lambda x: x["similarity"], reverse=True)
     return results[:top_k]

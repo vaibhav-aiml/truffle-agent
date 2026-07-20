@@ -1,4 +1,4 @@
-"""Unit tests for production readiness caching, rate limiting, and database pools."""
+"""Unit tests for production readiness: caching, rate limiting, database pools, and SQL read-only enforcement."""
 
 import unittest
 import sys
@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from backend.config import settings
 from backend.services.cache_service import get_cached_query, set_cached_query, make_query_cache_key, clear_cache
 from backend.services.rate_limiter import is_rate_limited, clear_rate_limits
-from backend.services.sql_service import get_db_connection
+from backend.services.sql_service import get_db_connection, execute_sql_query
 
 class TestProductionServices(unittest.TestCase):
     
@@ -66,6 +66,73 @@ class TestProductionServices(unittest.TestCase):
             mode = cursor.fetchone()[0]
             
         self.assertEqual(mode.lower(), "wal")
+
+
+class TestSQLReadOnlyAuthorizer(unittest.TestCase):
+    """Verify that the read-only authorizer blocks mutation operations."""
+    
+    def test_select_query_allowed(self):
+        """A legitimate SELECT should succeed through the read-only connection."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "SELECT COUNT(*) FROM tickets")
+        self.assertIsNone(result["error"])
+        self.assertIsNotNone(result["data"])
+
+    def test_select_with_aggregate_allowed(self):
+        """SELECT with aggregate functions (AVG, COUNT) should work."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "SELECT AVG(satisfaction_score) FROM tickets WHERE satisfaction_score IS NOT NULL")
+        self.assertIsNone(result["error"])
+
+    def test_select_with_group_by_allowed(self):
+        """SELECT with GROUP BY should work."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "SELECT status, COUNT(*) FROM tickets GROUP BY status")
+        self.assertIsNone(result["error"])
+        self.assertGreater(result["count"], 0)
+
+    def test_insert_blocked(self):
+        """INSERT should be blocked by the read-only authorizer."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "INSERT INTO tickets (id, customer_name) VALUES (999, 'Hacker')")
+        self.assertIsNotNone(result["error"])
+        self.assertIn("blocked", result["error"].lower())
+
+    def test_update_blocked(self):
+        """UPDATE should be blocked by the read-only authorizer."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "UPDATE tickets SET status = 'hacked' WHERE id = 1")
+        self.assertIsNotNone(result["error"])
+        self.assertIn("blocked", result["error"].lower())
+
+    def test_delete_blocked(self):
+        """DELETE should be blocked by the read-only authorizer."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "DELETE FROM tickets WHERE id = 1")
+        self.assertIsNotNone(result["error"])
+        self.assertIn("blocked", result["error"].lower())
+
+    def test_drop_table_blocked(self):
+        """DROP TABLE should be blocked by the read-only authorizer."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "DROP TABLE tickets")
+        self.assertIsNotNone(result["error"])
+        self.assertIn("blocked", result["error"].lower())
+
+    def test_attach_database_blocked(self):
+        """ATTACH DATABASE should be blocked by the read-only authorizer."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "ATTACH DATABASE ':memory:' AS hack_db")
+        self.assertIsNotNone(result["error"])
+        self.assertIn("blocked", result["error"].lower())
+
+    def test_pragma_blocked(self):
+        """PRAGMA should be blocked by the read-only authorizer."""
+        db_path = str(settings.DB_PATH)
+        result = execute_sql_query(db_path, "PRAGMA table_info(tickets)")
+        self.assertIsNotNone(result["error"])
+        self.assertIn("blocked", result["error"].lower())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,13 @@
-﻿"""Expanded knowledge base for Truffle - 15+ documents."""
+"""Consolidated knowledge base for Truffle — single source of truth for all FAQ content.
 
-EXPANDED_KB = [
+This module contains every RAG document used by the system. The keyword router
+references documents by ID from this list rather than maintaining separate
+hardcoded text, preventing content drift between the two retrieval paths.
+"""
+
+from typing import Optional
+
+EXPANDED_KB: list[dict[str, str]] = [
     {
         "id": "doc_001",
         "source": "getting_started.md",
@@ -113,7 +120,7 @@ EXPANDED_KB = [
         - Keys never expire but can be revoked
         
         Example Request:
-        curl -X GET https://api.example.com/v1/users \
+        curl -X GET https://api.example.com/v1/users \\
           -H "Authorization: Bearer YOUR_API_KEY"
         """
     },
@@ -319,17 +326,114 @@ EXPANDED_KB = [
         Need Help?
         Contact retention specialist for custom offers.
         """
+    },
+    # --- Documents merged from complete_kb.py (unique topics not in the 12 above) ---
+    {
+        "id": "doc_013",
+        "source": "payment_methods.md",
+        "category": "billing",
+        "content": """
+        PAYMENT METHODS ACCEPTED:
+
+        We accept these payment methods:
+        - Visa, Mastercard, American Express, Discover
+        - PayPal
+        - Apple Pay and Google Pay
+        - Bank transfer (Enterprise plans only)
+
+        All payments are processed securely via Stripe.
+        You can update payment methods in Settings > Billing.
+        """
+    },
+    {
+        "id": "doc_014",
+        "source": "password_reset.md",
+        "category": "account",
+        "content": """
+        PASSWORD RESET GUIDE:
+
+        How to Reset Your Password:
+        1. Go to the login page
+        2. Click "Forgot Password"
+        3. Enter your registered email address
+        4. Check your email for a reset link
+        5. Click the link and create a new password
+        6. Password must be at least 8 characters with one uppercase letter and one number
+
+        If you don't receive the email, check your spam folder.
+        Still having trouble? Contact support@example.com.
+        """
+    },
+    {
+        "id": "doc_015",
+        "source": "subscription_plans.md",
+        "category": "billing",
+        "content": """
+        SUBSCRIPTION PLANS:
+
+        Basic Plan - $9.99/month:
+        - 5 team members
+        - 100GB storage
+        - Email support
+
+        Premium Plan - $29.99/month:
+        - 20 team members
+        - 500GB storage
+        - Priority support
+        - Advanced analytics
+
+        Enterprise Plan - $99.99/month:
+        - Unlimited team members
+        - 2TB storage
+        - 24/7 dedicated support
+        - Custom features
+
+        Save 20% with annual billing!
+        """
+    },
+    {
+        "id": "doc_016",
+        "source": "refund_policy.md",
+        "category": "billing",
+        "content": """
+        REFUND POLICY:
+
+        30-day money-back guarantee on all plans.
+
+        To request a refund:
+        1. Go to Settings → Billing
+        2. Click "Request Refund"
+        3. Submit the request
+
+        Refunds take 5-7 business days to process.
+        The refund goes back to your original payment method.
+        """
     }
 ]
 
-def get_expanded_kb():
+
+def get_expanded_kb() -> list[dict[str, str]]:
+    """Return the full consolidated knowledge base document list."""
     return EXPANDED_KB
 
-def get_kb_by_category(category):
+
+def get_kb_by_category(category: str) -> list[dict[str, str]]:
+    """Filter and return KB documents matching the given category."""
     return [doc for doc in EXPANDED_KB if doc.get("category") == category]
 
-def get_kb_by_source(source):
+
+def get_kb_by_source(source: str) -> list[dict[str, str]]:
+    """Filter and return KB documents matching the given source filename."""
     return [doc for doc in EXPANDED_KB if doc.get("source") == source]
+
+
+def get_kb_by_id(doc_id: str) -> Optional[dict[str, str]]:
+    """Look up a single KB document by its unique ID."""
+    for doc in EXPANDED_KB:
+        if doc.get("id") == doc_id:
+            return doc
+    return None
+
 
 if __name__ == "__main__":
     print(f"📚 Loaded {len(EXPANDED_KB)} documents")

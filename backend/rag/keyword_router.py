@@ -1,159 +1,75 @@
-"""Keyword-based routing service for support queries."""
+"""Keyword-based routing service for support queries.
 
-RULES = [
+Routes queries to pre-defined FAQ answers by matching keywords against a
+rule table. Each rule maps to a document ID in the consolidated knowledge
+base (expanded_kb.py), so the answer text is always fetched from the
+single source of truth rather than maintained as a separate hardcoded copy.
+"""
+
+from backend.rag.expanded_kb import get_kb_by_id
+
+# Each rule maps keywords → a KB document ID and a human-readable source label.
+# The actual answer content is fetched dynamically from expanded_kb.py at query
+# time, preventing content drift between the keyword router and the vector store.
+RULES: list[dict] = [
     {
         "keywords": ["invite", "inviting", "add member", "team member", "add person", "new member", "add someone"],
-        "answer": """
-HOW TO INVITE TEAM MEMBERS:
-
-Step 1: Log into your account dashboard
-Step 2: Click "Settings" in the sidebar
-Step 3: Select "Team" or "Team Members"
-Step 4: Click the "Invite Member" button
-Step 5: Enter the person's email address
-Step 6: Choose role (Admin, Member, or Viewer)
-Step 7: Click "Send Invitation"
-
-The person will receive an email with a join link.
-
-Role Permissions:
-- Admin: Full access, can invite/remove members
-- Member: Can create/edit tickets, cannot manage team
-- Viewer: Read-only access
-
-Team Limits by Plan:
-- Basic: 5 members
-- Premium: 20 members  
-- Enterprise: Unlimited
-""",
+        "doc_id": "doc_003",
         "source": "Team Management Guide"
     },
     {
         "keywords": ["cancel", "cancellation", "unsubscribe", "stop billing", "end subscription"],
-        "answer": """
-HOW TO CANCEL YOUR SUBSCRIPTION:
-
-Step 1: Go to Settings → Billing
-Step 2: Click "Cancel Subscription"
-Step 3: Select a reason (optional)
-Step 4: Confirm cancellation
-
-What happens after:
-- Service continues until billing period ends
-- No further charges
-- Data kept for 30 days
-- Can reactivate anytime
-
-Alternatives to Cancellation:
-- Downgrade to a cheaper plan
-- Pause subscription (up to 3 months)
-- Switch to annual billing (save 20%)
-""",
+        "doc_id": "doc_012",
         "source": "Cancellation Guide"
     },
     {
         "keywords": ["mobile app", "phone app", "ios app", "android app", "download app"],
-        "answer": """
-MOBILE APP INFORMATION:
-
-Download from:
-- iOS: Apple App Store
-- Android: Google Play Store
-
-Features:
-- Push notifications for new tickets
-- Reply to customers on-the-go
-- Attach photos from phone
-- Voice-to-text typing
-- Offline mode (saves drafts)
-
-Requirements:
-- iOS 15+ or Android 10+
-- 100MB free space
-
-The mobile app is free for all subscribers!
-""",
+        "doc_id": "doc_009",
         "source": "Mobile App Guide"
     },
     {
         "keywords": ["password", "reset password", "forgot password"],
-        "answer": """
-HOW TO RESET YOUR PASSWORD:
-
-Step 1: Go to login page
-Step 2: Click "Forgot Password"
-Step 3: Enter your email address
-Step 4: Check your email for reset link
-Step 5: Click the link
-Step 6: Enter new password
-Step 7: Confirm and save
-
-Password Requirements:
-- Minimum 8 characters
-- One uppercase letter
-- One number
-
-If you don't receive the email, check your spam folder.
-""",
+        "doc_id": "doc_014",
         "source": "Password Reset Guide"
     },
     {
         "keywords": ["refund", "money back", "get refund"],
-        "answer": """
-REFUND POLICY:
-
-30-day money-back guarantee on all plans.
-
-To request a refund:
-1. Go to Settings → Billing
-2. Click "Request Refund"
-3. Submit the request
-
-Refunds take 5-7 business days to process.
-The refund goes back to your original payment method.
-""",
+        "doc_id": "doc_016",
         "source": "Refund Policy"
     },
     {
         "keywords": ["subscription", "plans", "pricing", "basic", "premium", "enterprise"],
-        "answer": """
-SUBSCRIPTION PLANS:
-
-Basic Plan - $9.99/month:
-- 5 team members
-- 100GB storage
-- Email support
-
-Premium Plan - $29.99/month:
-- 20 team members
-- 500GB storage
-- Priority support
-- Advanced analytics
-
-Enterprise Plan - $99.99/month:
-- Unlimited team members
-- 2TB storage
-- 24/7 dedicated support
-- Custom features
-
-Save 20% with annual billing!
-""",
+        "doc_id": "doc_015",
         "source": "Subscription Plans"
+    },
+    {
+        "keywords": ["payment", "payment method", "pay", "visa", "paypal", "credit card"],
+        "doc_id": "doc_013",
+        "source": "Payment Methods"
     }
 ]
 
+
 def route_keyword_query(query: str) -> dict:
-    """Route queries to predefined policy answers based on exact keyword inclusion."""
+    """Route queries to predefined policy answers based on exact keyword inclusion.
+
+    Looks up the answer content from the consolidated knowledge base by document
+    ID, ensuring the keyword router and vector search always serve identical text.
+    """
     query_lower = query.lower()
     
     for rule in RULES:
         for keyword in rule["keywords"]:
             if keyword in query_lower:
-                return {
-                    "response": rule["answer"],
-                    "source": rule["source"],
-                    "confidence": 0.95
-                }
+                doc = get_kb_by_id(rule["doc_id"])
+                if doc:
+                    return {
+                        "response": doc["content"],
+                        "source": rule["source"],
+                        "confidence": 0.95
+                    }
+                # Fallback if doc_id is misconfigured — should not happen.
+                break
                 
     return {
         "response": "I'm not sure about that. Please contact support for help.",

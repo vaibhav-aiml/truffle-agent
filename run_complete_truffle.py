@@ -71,10 +71,12 @@ def start_health_check_server(port=8080):
     t = threading.Thread(target=run, daemon=True)
     t.start()
 
-# Initialize health check server once at module load
-if "HEALTH_CHECK_SERVER" not in globals():
+@st.cache_resource
+def initialize_health_server():
     start_health_check_server(8080)
-    HEALTH_CHECK_SERVER = True
+    return True
+
+initialize_health_server()
 
 # Validate environment settings on startup
 is_valid, config_warnings, config_errors = validate_environment()
@@ -165,8 +167,12 @@ if page == "💬 Chat":
         query = st.chat_input("Ask about support or tickets...")
     
     if query:
-        # 1. Rate Limiting Check (Blocks query if limit exceeded)
-        if is_rate_limited(user_id):
+        # 1. Input Length Validation (prevents prompt stuffing / embedding cost inflation)
+        MAX_QUERY_LENGTH = 500
+        if len(query) > MAX_QUERY_LENGTH:
+            st.error(f"🚨 Query too long ({len(query)} characters). Please keep your question under {MAX_QUERY_LENGTH} characters.")
+        # 2. Rate Limiting Check (Blocks query if limit exceeded)
+        elif is_rate_limited(user_id):
             st.error("🚨 Rate limit exceeded: You have submitted too many requests in a short period. Please wait before asking another question.")
         else:
             st.session_state.messages.append({"role": "user", "content": query})

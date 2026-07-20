@@ -1,10 +1,11 @@
 """Stateless document chunking service routines."""
 
+
 def chunk_text_by_fixed_size(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
-    """Split text into fixed-size word chunks."""
-    words = text.split()
-    chunks = []
-    step = chunk_size - overlap
+    """Split text into fixed-size word chunks with optional overlap."""
+    words: list[str] = text.split()
+    chunks: list[str] = []
+    step: int = chunk_size - overlap
     if step <= 0:
         step = chunk_size
         
@@ -14,10 +15,11 @@ def chunk_text_by_fixed_size(text: str, chunk_size: int = 500, overlap: int = 50
         
     return chunks
 
-def create_document_chunks(document: dict, chunk_size: int = 500, overlap: int = 50) -> list[dict]:
+
+def create_document_chunks(document: dict[str, str], chunk_size: int = 500, overlap: int = 50) -> list[dict]:
     """Create chunks from a document with index metadata."""
-    text = document.get("content", "")
-    chunks = chunk_text_by_fixed_size(text, chunk_size, overlap)
+    text: str = document.get("content", "")
+    chunks: list[str] = chunk_text_by_fixed_size(text, chunk_size, overlap)
     
     return [{
         "id": f"{document.get('id', 'doc')}_chunk_{i}",

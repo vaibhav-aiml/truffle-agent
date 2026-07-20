@@ -1,6 +1,7 @@
 """Logging configuration for Truffle."""
 
 import logging
+import logging.handlers
 from pathlib import Path
 
 def setup_logger(name="truffle"):
@@ -16,8 +17,14 @@ def setup_logger(name="truffle"):
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "truffle.log"
     
-    # File Handler
-    file_handler = logging.FileHandler(log_file, encoding="utf-8")
+    # Rotating File Handler — caps log at 5 MB with 3 backups,
+    # preventing unbounded disk growth in long-running containers.
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file,
+        maxBytes=5 * 1024 * 1024,  # 5 MB
+        backupCount=3,
+        encoding="utf-8"
+    )
     file_formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(message)s'
     )

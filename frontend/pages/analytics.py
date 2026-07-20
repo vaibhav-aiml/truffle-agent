@@ -16,9 +16,9 @@ def show_analytics():
         return
         
     try:
-        conn = sqlite3.connect(db_path)
-        df = pd.read_sql_query("SELECT * FROM tickets", conn)
-        conn.close()
+        from backend.services.sql_service import get_db_connection
+        with get_db_connection(str(db_path)) as conn:
+            df = pd.read_sql_query("SELECT * FROM tickets", conn)
     except Exception as e:
         st.error(f"Error accessing database: {e}")
         return

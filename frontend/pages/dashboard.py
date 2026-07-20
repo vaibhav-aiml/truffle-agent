@@ -13,19 +13,18 @@ def get_database_stats() -> dict:
         return {"error": "Database not found"}
     
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT COUNT(*) FROM tickets")
-        total = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM tickets WHERE status = 'open'")
-        open_tickets = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT AVG(satisfaction_score) FROM tickets WHERE satisfaction_score IS NOT NULL")
-        avg_satisfaction = cursor.fetchone()[0] or 0.0
-        
-        conn.close()
+        from backend.services.sql_service import get_db_connection
+        with get_db_connection(str(db_path)) as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT COUNT(*) FROM tickets")
+            total = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM tickets WHERE status = 'open'")
+            open_tickets = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT AVG(satisfaction_score) FROM tickets WHERE satisfaction_score IS NOT NULL")
+            avg_satisfaction = cursor.fetchone()[0] or 0.0
         
         resolution_rate = f"{(total - open_tickets) / max(1, total) * 100:.0f}%"
         

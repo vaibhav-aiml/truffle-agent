@@ -89,7 +89,8 @@ def chat_with_agent(context: dict, query: str) -> dict:
     if is_db_query:
         logger.info(f"Routing query to SQL service: {query}")
         try:
-            result = answer_sql_question(db_path, query)
+            groq_client = context.get("groq_client")
+            result = answer_sql_question(db_path, query, groq_client)
             
             # Check for SQL error cases
             if not result.get("sql") and "error" in result.get("answer", "").lower():

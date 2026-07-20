@@ -1,6 +1,5 @@
 {
   "name": "Python 3",
-  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
   "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
   "customizations": {
     "codespaces": {
@@ -18,9 +17,17 @@
     }
   },
   "updateContentCommand": "[ -f packages.txt ] && sudo apt update && sudo apt upgrade -y && sudo xargs apt install -y <packages.txt; [ -f requirements.txt ] && pip3 install --user -r requirements.txt; pip3 install --user streamlit; echo '✅ Packages installed and Requirements met'",
+
+  // ⚠️  DEV-ONLY: --server.enableCORS false and --server.enableXsrfProtection false
+  // are required for GitHub Codespaces port forwarding to work correctly.
+  // Streamlit's CORS/XSRF checks conflict with the forwarded-port proxy.
+  //
+  // DO NOT copy these flags into any production launch command.
+  // The production Dockerfile CMD does NOT include these flags.
   "postAttachCommand": {
     "server": "streamlit run run_complete_truffle.py --server.enableCORS false --server.enableXsrfProtection false"
   },
+
   "portsAttributes": {
     "8501": {
       "label": "Application",
